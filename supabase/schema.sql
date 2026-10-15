@@ -46,3 +46,9 @@ CREATE POLICY "Allow public select" ON public.appointments
 -- Allow updates (e.g. status cancellation via API or dashboard)
 CREATE POLICY "Allow service role full access" ON public.appointments
     FOR ALL USING (true);
+
+-- 5. Grant table permissions to API roles
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.appointments TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+
