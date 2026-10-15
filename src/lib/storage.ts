@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
-import { parseTimeToMinutes, BLOCK_DURATION_MINUTES } from "./booking-utils";
+import { parseTimeToMinutes } from "./booking-utils";
+import { supabase, isSupabaseConfigured } from "./supabase";
 
 export interface Appointment {
   id: string;
@@ -38,7 +39,7 @@ function getStorageFilePath(): string | null {
   }
 }
 
-export function getAllAppointments(): Appointment[] {
+function getLocalAppointments(): Appointment[] {
   const filePath = getStorageFilePath();
   if (filePath && fs.existsSync(filePath)) {
     try {
@@ -51,8 +52,8 @@ export function getAllAppointments(): Appointment[] {
   return memoryStore;
 }
 
-export function saveAppointment(appointment: Appointment): void {
-  const all = getAllAppointments();
+function saveLocalAppointment(appointment: Appointment): void {
+  const all = getLocalAppointments();
   all.push(appointment);
 
   const filePath = getStorageFilePath();
@@ -67,13 +68,91 @@ export function saveAppointment(appointment: Appointment): void {
   }
 }
 
-export function isSlotAvailable(
+export async function getAllAppointments(): Promise<Appointment[]> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("*")
+        .neq("status", "cancelled");
+
+      if (!error && data) {
+        return data.map((row: any) => ({
+          id: row.id,
+          serviceId: row.service_id,
+          extraServiceIds: row.extra_service_ids || [],
+          serviceName: row.service_name,
+          servicePrice: Number(row.service_price),
+          priceLabel: row.price_label,
+          quantity: row.quantity || 1,
+          duration: Number(row.duration),
+          barberName: row.barber_name,
+          barberId: row.barber_id,
+          dateKey: row.date_key,
+          dateLabel: row.date_label,
+          time: row.time,
+          fullName: row.full_name,
+          email: row.email || "",
+          phone: row.phone,
+          notes: row.notes || "",
+          createdAt: row.created_at,
+          status: row.status || "confirmed",
+        }));
+      }
+      console.warn("Supabase query error, using local storage:", error?.message);
+    } catch (e) {
+      console.warn("Supabase fetch failed, fallback to local:", e);
+    }
+  }
+
+  return getLocalAppointments();
+}
+
+export async function saveAppointment(appointment: Appointment): Promise<void> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { error } = await supabase.from("appointments").insert({
+        id: appointment.id,
+        service_id: appointment.serviceId,
+        extra_service_ids: appointment.extraServiceIds || [],
+        service_name: appointment.serviceName,
+        service_price: appointment.servicePrice,
+        price_label: appointment.priceLabel,
+        quantity: appointment.quantity,
+        duration: appointment.duration,
+        barber_name: appointment.barberName,
+        barber_id: appointment.barberId,
+        date_key: appointment.dateKey,
+        date_label: appointment.dateLabel,
+        time: appointment.time,
+        full_name: appointment.fullName,
+        email: appointment.email,
+        phone: appointment.phone,
+        notes: appointment.notes,
+        created_at: appointment.createdAt,
+        status: appointment.status,
+      });
+
+      if (!error) {
+        return;
+      }
+      console.warn("Supabase insert error, saving locally:", error.message);
+    } catch (e) {
+      console.warn("Supabase insert failed, saving locally:", e);
+    }
+  }
+
+  saveLocalAppointment(appointment);
+}
+
+export async function isSlotAvailable(
   dateKey: string,
   barberId: string,
   timeStr: string,
   durationMinutes: number
-): boolean {
-  const appointments = getAllAppointments().filter(
+): Promise<boolean> {
+  const all = await getAllAppointments();
+  const appointments = all.filter(
     (a) => a.dateKey === dateKey && a.status !== "cancelled"
   );
 
@@ -81,7 +160,6 @@ export function isSlotAvailable(
   const reqEnd = reqStart + durationMinutes;
 
   for (const app of appointments) {
-    // If specific barber, only conflict if same barber
     if (barberId !== "cualquiera" && app.barberId !== "cualquiera" && app.barberId !== barberId) {
       continue;
     }
@@ -89,7 +167,6 @@ export function isSlotAvailable(
     const appStart = parseTimeToMinutes(app.time);
     const appEnd = appStart + app.duration;
 
-    // Overlap condition
     if (reqStart < appEnd && reqEnd > appStart) {
       return false;
     }

@@ -137,13 +137,72 @@ quality-barbershop/
 
 ---
 
-## 🌐 Despliegue en la Nube (Vercel)
+## 🗄️ 1. Configuración de Supabase (Base de Datos PostgreSQL)
 
-1. Sube este proyecto a tu repositorio de **GitHub**.
-2. Entra en [vercel.com](https://vercel.com) e inicia sesión con GitHub.
-3. Haz clic en **"Add New..."** -> **"Project"** y selecciona tu repositorio `quality-barbershop`.
-4. Deja la configuración por defecto (Next.js es detectado automáticamente).
-5. Haz clic en **"Deploy"**. En 60 segundos tendrás tu barbería en línea con certificado SSL gratuito.
+Supabase proporciona la base de datos PostgreSQL en la nube para guardar las citas y clientes de forma permanente.
+
+### Pasos para configurar Supabase:
+1. Entra a [supabase.com](https://supabase.com) y crea una cuenta gratuita.
+2. Haz clic en **"New Project"**, dale un nombre (ej. `quality-barbershop`) y asigna una contraseña segura a tu base de datos. Elige la región más cercana (ej. `East US` o `São Paulo`).
+3. Una vez creado el proyecto, ve al menú lateral izquierdo y entra en **SQL Editor**.
+4. Haz clic en **"New Query"**, copia y pega todo el contenido de [`supabase/schema.sql`](file:///c:/backup%20D/Desktop/DevMak3/quality-barbershop/supabase/schema.sql) y haz clic en **Run**.
+   * Esto creará automáticamente la tabla `appointments`, sus índices de búsqueda rápida y las políticas de seguridad (RLS).
+5. Ve a **Project Settings** (icono de engranaje) -> **API**.
+6. Copia los siguientes valores:
+   * **Project URL** (ej. `https://xyzcompany.supabase.co`)
+   * **anon public key** (llave pública para el cliente)
+   * **service_role key** (llave secreta para el backend)
+7. Añade estas 3 variables a tu `.env.local` (para desarrollo local) o a las plataformas de despliegue (Vercel / Render):
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-public-key
+   SUPABASE_SERVICE_ROLE_KEY=tu-service-role-secret-key
+   ```
+
+---
+
+## ⚡ 2. Despliegue en Vercel (Recomendado para Next.js)
+
+Vercel es la plataforma creada por los creadores de Next.js; ofrece la mejor velocidad, renderizado en el Edge y certificado SSL automático.
+
+### Pasos para desplegar en Vercel:
+1. Ve a [vercel.com](https://vercel.com) e inicia sesión con tu cuenta de GitHub.
+2. En el panel principal, haz clic en **"Add New..."** -> **"Project"**.
+3. Busca tu repositorio `qualitybarbershopapp/qualitybarbershop` y haz clic en **"Import"**.
+4. En la sección **"Environment Variables"**, agrega las variables de Supabase:
+   * `NEXT_PUBLIC_SUPABASE_URL` = `https://tu-proyecto.supabase.co`
+   * `NEXT_PUBLIC_SUPABASE_ANON_KEY` = `tu-anon-key`
+   * `SUPABASE_SERVICE_ROLE_KEY` = `tu-service-role-key`
+5. Haz clic en **"Deploy"**.
+6. En menos de 60 segundos tu barbería estará funcionando en una URL pública `https://qualitybarbershop.vercel.app` (puedes vincularle tu propio dominio personalizado en **Settings -> Domains**).
+
+---
+
+## ☁️ 3. Despliegue en Render (Alternativa Cloud)
+
+Render permite alojar la aplicación como un Web Service Node.js en su capa gratuita o de pago.
+
+### Opción A: Despliegue con Blueprint (`render.yaml` incluido)
+1. Ve a [dashboard.render.com](https://dashboard.render.com) e inicia sesión con GitHub.
+2. Haz clic en **"New +"** -> **"Blueprint"**.
+3. Conecta el repositorio `qualitybarbershopapp/qualitybarbershop`.
+4. Render detectará automáticamente el archivo `render.yaml`.
+5. Rellena las variables de entorno de Supabase que te solicite en pantalla y haz clic en **"Apply"**.
+
+### Opción B: Despliegue Manual como Web Service
+1. En Render Dashboard, haz clic en **"New +"** -> **"Web Service"**.
+2. Conecta `qualitybarbershopapp/qualitybarbershop`.
+3. Configura los siguientes campos:
+   * **Runtime:** `Node`
+   * **Build Command:** `npm install && npm run build`
+   * **Start Command:** `npm run start`
+   * **Instance Type:** `Free`
+4. En **Environment Variables**, añade:
+   * `NODE_VERSION` = `20`
+   * `NEXT_PUBLIC_SUPABASE_URL` = `https://tu-proyecto.supabase.co`
+   * `NEXT_PUBLIC_SUPABASE_ANON_KEY` = `tu-anon-key`
+   * `SUPABASE_SERVICE_ROLE_KEY` = `tu-service-role-key`
+5. Haz clic en **"Create Web Service"**.
 
 ---
 

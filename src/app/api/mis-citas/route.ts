@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { dateKey: todayKey, minutes: currentMinutes } = getBogotaNow();
-    const all = getAllAppointments();
+    const all = await getAllAppointments();
 
     const matched = all.filter((app) => {
       const matchTel =

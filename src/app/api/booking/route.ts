@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getBlockGridTimes, parseTimeToMinutes, getBogotaNow } from "@/lib/booking-utils";
+import { getBlockGridTimes } from "@/lib/booking-utils";
 import { BARBERS, equipoParaServicios } from "@/data/barbershop-data";
 import {
-  getAllAppointments,
   saveAppointment,
   isSlotAvailable,
   Appointment,
@@ -16,7 +15,6 @@ export async function GET(request: NextRequest) {
     const dateKey = searchParams.get("dateKey");
     const barberId = searchParams.get("barberId");
     const duration = parseInt(searchParams.get("duration") || "30", 10);
-    const servicios = searchParams.get("servicios")?.split(",").filter(Boolean) || [];
 
     if (!dateKey || !barberId) {
       return NextResponse.json(
@@ -27,10 +25,17 @@ export async function GET(request: NextRequest) {
 
     const grid = getBlockGridTimes(dateKey, { barberId });
 
-    // Filter slots where full duration fits without overlap
-    const availableTimes = grid.filter((time) => {
-      return isSlotAvailable(dateKey, barberId, time, duration);
-    });
+    // Filter slots where full duration fits without overlap asynchronously
+    const availabilityChecks = await Promise.all(
+      grid.map(async (time) => {
+        const available = await isSlotAvailable(dateKey, barberId, time, duration);
+        return { time, available };
+      })
+    );
+
+    const availableTimes = availabilityChecks
+      .filter((item) => item.available)
+      .map((item) => item.time);
 
     return NextResponse.json({ availableTimes });
   } catch (error) {
@@ -77,9 +82,14 @@ export async function POST(request: NextRequest) {
 
     if (barberId === "cualquiera") {
       const candidates = equipoParaServicios([serviceId, ...extraServiceIds]);
-      const availableCandidate = candidates.find((c) =>
-        isSlotAvailable(dateKey, c.id, time, duration * quantity)
-      );
+      let availableCandidate = null;
+
+      for (const c of candidates) {
+        if (await isSlotAvailable(dateKey, c.id, time, duration * quantity)) {
+          availableCandidate = c;
+          break;
+        }
+      }
 
       if (availableCandidate) {
         assignedBarberId = availableCandidate.id;
@@ -91,7 +101,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check collision
-    if (!isSlotAvailable(dateKey, assignedBarberId, time, duration * quantity)) {
+    const isFree = await isSlotAvailable(dateKey, assignedBarberId, time, duration * quantity);
+    if (!isFree) {
       return NextResponse.json(
         { error: "El horario seleccionado acaba de ser reservado. Por favor elige otro." },
         { status: 409 }
@@ -120,7 +131,7 @@ export async function POST(request: NextRequest) {
       status: "confirmed",
     };
 
-    saveAppointment(newAppointment);
+    await saveAppointment(newAppointment);
 
     return NextResponse.json({
       ok: true,
