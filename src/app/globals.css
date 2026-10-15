@@ -1,0 +1,149 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0b0b0c;
+  --bg-elevated: #17161a;
+  --bg-elevated-2: #201e22;
+  --ink: #f6f1e7;
+  --ink-muted: #b7afa0;
+  --ink-faint: #7c7568;
+  --line: rgba(246, 241, 231, 0.1);
+  --gold: #cda545;
+  --gold-strong: #eac96b;
+  --gold-soft: rgba(205, 165, 69, 0.12);
+  --red: #8c3230;
+  --aurora-brown: #7a4620;
+  --aurora-wine: #4a1f16;
+  --radius-brand: 18px;
+  --radius: 0.75rem;
+  --primary: var(--gold);
+  --primary-foreground: #171310;
+}
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-inter), sans-serif;
+  overflow-x: hidden;
+}
+
+/* Ambient Aurora Glow */
+.aurora-field {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.aurora-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(120px);
+  opacity: 0.22;
+}
+
+.aurora-blob--brown {
+  width: 500px;
+  height: 500px;
+  background-color: var(--aurora-brown);
+  top: -100px;
+  left: 10%;
+}
+
+.aurora-blob--gold {
+  width: 450px;
+  height: 450px;
+  background-color: var(--gold);
+  top: 30%;
+  right: 5%;
+  opacity: 0.12;
+}
+
+.aurora-blob--wine {
+  width: 600px;
+  height: 600px;
+  background-color: var(--aurora-wine);
+  bottom: 10%;
+  left: 20%;
+}
+
+/* Traditional Barber Stripe Divider */
+.stripe-divider {
+  height: 6px;
+  width: 100%;
+  background: repeating-linear-gradient(
+    -45deg,
+    #8c3230,
+    #8c3230 14px,
+    #f6f1e7 14px,
+    #f6f1e7 28px,
+    #1b3b6f 28px,
+    #1b3b6f 42px,
+    #f6f1e7 42px,
+    #f6f1e7 56px
+  );
+  opacity: 0.85;
+}
+
+/* Gold CTA Button */
+.gold-cta {
+  background-color: var(--gold);
+  color: #0b0b0c;
+  box-shadow: 0 4px 18px rgba(205, 165, 69, 0.25);
+  font-weight: 700;
+  transition: all 0.25s ease;
+}
+
+.gold-cta:hover {
+  background-color: var(--gold-strong);
+  box-shadow: 0 6px 24px rgba(234, 201, 107, 0.4);
+  transform: translateY(-1px);
+}
+
+/* Menu rows with dotted leaders */
+.menu-dots {
+  border-bottom: 1px dotted var(--line);
+  margin-bottom: 5px;
+  min-width: 16px;
+}
+
+/* Premium VIP Card */
+.premium-card {
+  background: linear-gradient(135deg, #eac96b 0%, #cda545 40%, #a98028 100%);
+  color: #171310;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.premium-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px rgba(205, 165, 69, 0.25);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #201e22;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold);
+}
